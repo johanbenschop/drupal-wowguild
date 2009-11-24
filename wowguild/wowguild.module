@@ -7,7 +7,7 @@
  * This module provides multible block's and pages for displaying the
  * guild's information.
  * Blocks: Guild Information and Recruitment.
- * Pages: Guild Roster, Charachter Pages and Proffesion Pages.
+ * Pages: Guild Roster, Charachters Pages and Proffesions Page.
  */
 
 /**
@@ -28,8 +28,9 @@ function wowguild_help($path, $arg) {
  */
 function wowguild_perm() {
   return array(
-  'accept applies',
-  'delice applies',
+    'accept applicants',
+    'delice applicants',
+    'modify reqruitment',
   );
 }
 
