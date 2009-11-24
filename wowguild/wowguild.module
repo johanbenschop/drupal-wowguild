@@ -175,7 +175,7 @@ function wowguild_menu() {
 
   $items['apply'] = array(
       'title' => 'Submit application',
-      'page callback' => 'page_wowguild_apply',
+      'page callback' => 'page_wowguild_application',
       'page arguments' => array(1),
       'access arguments' => array('access content'),
       'type' => MENU_CALLBACK,
