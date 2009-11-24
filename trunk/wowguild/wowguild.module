@@ -174,7 +174,7 @@ function wowguild_menu() {
       'file' => 'wowguild.pages.inc',
   );
 
-  $items['apply'] = array(
+  $items['application'] = array(
       'title' => 'Submit application',
       'page callback' => 'page_wowguild_application',
       'page arguments' => array(1),
