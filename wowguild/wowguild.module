@@ -61,44 +61,6 @@ function wowguild_cron() {
       $xml->guildInfo->guildHeader->attributes()->count,
       $guildleader
   );
-
-  /*$characters = $xml->xpath("//character");
-  foreach ($characters as $character) {
-    sleep(5);
-    $url = wowguild_url(
-        array(
-        'type' => 'character-sheet',
-        'name' => $character->attributes()->name
-        )
-    );
-    $http_result = _wowguild_fetch_armory($url);
-    //$char_xml = simplexml_load_string($http_result->data);
-
-
-    if ($http_result->code == 500) {
-      print_r('Code 500!<br>');
-    }
-    if ($http_result->code == 200) {
-      //print_r('Code 200!<br>');
-      $char_xml = simplexml_load_string($http_result->data);
-      if ($char_xml === FALSE) {
-        print_r('Code 700!<br>');
-      }
-      else {
-        db_query(
-        "UPDATE {wowguildmembers} SET level=%d, rank=%d, achPoints=%d, profession0id=%d, profession0value=%d, profession1id=%d, profession1value=%d WHERE name='%s'",
-        $character->attributes()->level,
-        check_plain($character->attributes()->rank),
-        $character->attributes()->achPoints,
-        check_plain($char_xml->characterInfo->characterTab->professions->skill[0]->attributes()->id),
-        check_plain($char_xml->characterInfo->characterTab->professions->skill[0]->attributes()->value),
-        check_plain($char_xml->characterInfo->characterTab->professions->skill[1]->attributes()->id),
-        check_plain($char_xml->characterInfo->characterTab->professions->skill[1]->attributes()->value),
-        check_plain($character->attributes()->name)
-        );
-      }
-    }
-  }*/
 }
 
 /**
