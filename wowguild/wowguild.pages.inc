@@ -3,10 +3,9 @@
 
 /**
  * @file
- * Module for fetching data from GoodReads.com.
- * This module provides block content retrieved from a GoodReads.com
- * bookshelf.
- * @see http://www.goodreads.com
+ * Module for retriving information from the World of Warcraft armory.
+ * This module provides multible block's and pages for displaying the
+ * guild's information.
  */
 
 /**
