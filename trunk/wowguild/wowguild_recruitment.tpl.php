@@ -24,5 +24,5 @@
 } ?>
 </div>
 <div id="wowguild_apply">
-<?php echo l('Submit Application!', 'apply');  ?>
+<?php echo l('Submit Application!', 'application');  ?>
 </div>
