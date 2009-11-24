@@ -223,7 +223,7 @@ function wowguild_schema() {
     'primary key' => array('PrimKey'),
   );
 
-  $schema['wowguildapplies'] = array(
+  $schema['wowguild_applicants'] = array(
     'description' => 'The table for storing the guilds information.',
     'fields' => array(
       'nid' => array(
