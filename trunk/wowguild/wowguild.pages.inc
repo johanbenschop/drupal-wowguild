@@ -55,16 +55,18 @@ function page_character_sheet($character) {
  * Page that contains the settings controls of the
  * Guild module.
  */
-function page_wowguild_apply() {
+function page_wowguild_application() {
   $out = t('Fill in these simple questions and submit once you are done?');
-  $out .= drupal_get_form('my_form');
+  $out .= drupal_get_form('application_form');
 
   return $out;
 }
 
 
-
-function my_form($form_state) {
+/**
+ * Form for the page_wowguild_application() function.
+ */
+function application_form($form_state) {
   if (empty($form_state['storage']['step'])) {
     // Setting step to our default.
     $form_state['storage']['step'] = 1;
@@ -72,14 +74,14 @@ function my_form($form_state) {
 
   switch ($form_state['storage']['step']) {
     case 1:
-      $form['apply'] = array(
+      $form['application'] = array(
           '#type' => 'fieldset',
           '#title' => t('Submit application'),
           '#tree' => TRUE,
           '#collapsible' => TRUE,
       );
 
-      $form['apply']['charactername'] = array(
+      $form['application']['charactername'] = array(
           '#type' => 'textfield',
           '#title' => t('Character name'),
           '#size' => 30,
@@ -88,7 +90,7 @@ function my_form($form_state) {
 //          '#required' => TRUE,
       );
 
-      $form['apply']['realname'] = array(
+      $form['application']['realname'] = array(
           '#type' => 'textfield',
           '#title' => t('Real name'),
           '#size' => 30,
@@ -98,7 +100,7 @@ function my_form($form_state) {
       );
 
 
-      $form['apply']['email'] = array(
+      $form['application']['email'] = array(
           '#type' => 'textfield',
           '#title' => t('E-Mail address'),
           '#size' => 30,
@@ -107,7 +109,7 @@ function my_form($form_state) {
 //          '#required' => TRUE,
       );
 
-      $form['apply']['country'] = array(
+      $form['application']['country'] = array(
           '#type' => 'textfield',
           '#title' => t('Country'),
           '#size' => 30,
@@ -116,7 +118,7 @@ function my_form($form_state) {
 //          '#required' => TRUE,
       );
 
-      $form['apply']['aboutyou'] = array(
+      $form['application']['aboutyou'] = array(
           '#type' => 'textarea',
           '#title' => t('Tell us about yourself?'),
           '#size' => 30,
@@ -125,7 +127,7 @@ function my_form($form_state) {
 //          '#required' => TRUE,
       );
 
-      $form['apply']['whyapply'] = array(
+      $form['application']['whyapply'] = array(
           '#type' => 'textarea',
           '#title' => t('What makes you speciel enough to join our guild?'),
           '#size' => 30,
@@ -136,14 +138,14 @@ function my_form($form_state) {
       break;
 
     case 2:
-      $form['apply'] = array(
+      $form['application'] = array(
           '#type' => 'fieldset',
           '#title' => t('Submit application'),
           '#tree' => TRUE,
           '#collapsible' => TRUE,
       );
 
-      $form['apply']['charactername'] = array(
+      $form['application']['charactername'] = array(
           '#type' => 'textfield',
           '#title' => t('Character name'),
           '#size' => 30,
@@ -152,7 +154,7 @@ function my_form($form_state) {
 //          '#required' => TRUE,
       );
 
-      $form['apply']['level'] = array(
+      $form['application']['level'] = array(
           '#type' => 'textfield',
           '#title' => t('Character name'),
           '#size' => 30,
@@ -161,7 +163,7 @@ function my_form($form_state) {
 //          '#required' => TRUE,
       );
 
-      $form['apply']['class'] = array(
+      $form['application']['class'] = array(
           '#type' => 'textfield',
           '#title' => t('Character name'),
           '#size' => 30,
@@ -170,7 +172,7 @@ function my_form($form_state) {
 //          '#required' => TRUE,
       );
 
-      $form['apply']['race'] = array(
+      $form['application']['race'] = array(
           '#type' => 'textfield',
           '#title' => t('Character name'),
           '#size' => 30,
@@ -179,7 +181,7 @@ function my_form($form_state) {
 //          '#required' => TRUE,
       );
 
-      $form['apply']['talents'] = array(
+      $form['application']['talents'] = array(
           '#type' => 'textfield',
           '#title' => t('Character name'),
           '#size' => 30,
@@ -216,7 +218,7 @@ function my_form($form_state) {
   return $form;
 }
 
-function my_form_submit($form, &$form_state) {
+function application_form_submit($form, &$form_state) {
   // Save the values for the current step into the storage array.
   $form_state['storage']['values'][$form_state['storage']['step']] = $form_state['values'];
 
@@ -228,99 +230,24 @@ function my_form_submit($form, &$form_state) {
     $form_state['storage']['step']++;
   }
   elseif ($form_state['clicked_button']['#id']=='edit-submit') {
+
+    db_query(
+    'INSERT INTO {wowguild_applicants} (nid, name, realname, email, country, aboutyou, whyapply)'
+     ."VALUES (%d, '%s', '%s', '%s', '%s', '%s', '%s')",
+    $test0,
+    $form_state['values']['application']['charactername'],
+    $form_state['values']['application']['realname'],
+    $form_state['values']['application']['email'],
+    $form_state['values']['application']['country'],
+    $form_state['values']['application']['aboutyou'],
+    $form_state['values']['application']['whyapply']
+  );
+
     drupal_set_message( t('Confirmed and retrived information from the Armory.') );
   }
   // Tell Drupal we are redrawing the same form.
   $form_state['rebuild'] = TRUE;
 }
-
-
-
-
-/* function apply_form($form_state) {
-  $form['apply'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Submit application'),
-    '#tree' => TRUE,
-    '#collapsible' => TRUE,
-  );
-
-  $form['apply']['charactername'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Character name'),
-    '#size' => 30,
-    '#maxlength' => 64,
-    '#description' => t('What is the name of your character?'),
-    '#required' => TRUE,
-  );
-
-  $form['apply']['realname'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Real name'),
-    '#size' => 30,
-    '#maxlength' => 64,
-    '#description' => t('What is your real name?'),
-    '#required' => TRUE,
-  );
-
-
-  $form['apply']['email'] = array(
-    '#type' => 'textfield',
-    '#title' => t('E-Mail address'),
-    '#size' => 30,
-    '#maxlength' => 64,
-    '#description' => t('What is your valid e-mail address? (Your password and acount name will be sent to this address!)'),
-    '#required' => TRUE,
-  );
-
-  $form['apply']['country'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Country'),
-    '#size' => 30,
-    '#maxlength' => 64,
-    '#description' => t('In which country do you live in?'),
-    '#required' => TRUE,
-  );
-
-  $form['apply']['aboutyou'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Tell us about yourself?'),
-    '#size' => 30,
-    '#maxlength' => 64,
-    '#description' => t('Can you tell us somethings about yourself?'),
-    '#required' => TRUE,
-  );
-
-  $form['apply']['whyapply'] = array(
-    '#type' => 'textarea',
-    '#title' => t('What makes you speciel enough to join our guild?'),
-    '#size' => 30,
-    '#maxlength' => 64,
-    '#description' => t('Do you have Teamspeak installed on your PC?'),
-    '#required' => TRUE,
-  );
-
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Submit your application!'));
-
-  return $form;
-}
-
-function apply_form_submit($form, &$form_state) {
-  $test0 = "001";
-  db_query(
-    'INSERT INTO {wowguildapplies} (nid, name, realname, email, country, aboutyou, whyapply)'
-     ."VALUES (%d, '%s', '%s', '%s', '%s', '%s', '%s')",
-    $test0,
-    $form_state['values']['apply']['charactername'],
-    $form_state['values']['apply']['realname'],
-    $form_state['values']['apply']['email'],
-    $form_state['values']['apply']['country'],
-    $form_state['values']['apply']['aboutyou'],
-    $form_state['values']['apply']['whyapply']
-  );
-
-  drupal_set_message( t('Confirmed and retrived information from the Armory.') );
-} /*
 
 /**
  * Page that displays the character sheet of an user.
@@ -330,7 +257,7 @@ function page_wowguild_character() {
 }
 
 /**
- * Page that displays the character sheet of an user.
+ * Page that displays the proffesions of the characters with current skill.
  */
 function page_wowguild_crafting() {
   $names_arr = wowguild_arr_names();
@@ -342,6 +269,9 @@ function page_wowguild_crafting() {
 
   $result = db_query('SELECT * FROM {wowguildprofessions}'. tablesort_sql($header));
   //$caption = 'TEST';
+  // Puts the result from the sql query into seperate arrays for use with the table.
+  // Meaning of numbers like 755, 186 and 182 can be found in the documentation
+  // under 'profession codes'.
   while ($row = db_fetch_object($result)) {
     switch ($row->profession0id) {
       case 755:
@@ -526,15 +456,9 @@ function page_wowguild_crafting() {
   return $display;
 }
 
-/*<table border="1">
-<tr>
-  <td>100</td>
-  <td>200</td>
-  <td>300</td>
-</tr></table> */
-
 /**
- * Page to import information.
+ * Imports information such as professions from a character to the database.
+ * It is possible that the inmports simply fails due to the Armory having errors.
  */
 function page_wowguild_import($character) {
   $output = t('Fill in these simple questions and submit once you are done?');
