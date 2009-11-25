@@ -52,14 +52,13 @@ function wowguild_cron() {
       )
   );
 
-  $http_result = _wowguild_fetch_armory($url);
-  $xml = simplexml_load_string($http_result->data);
-  $arr = ($xml->xpath("//character[@rank='0']"));
+  $fetched = _wowguild_fetch_armory($url);
+  $arr = ($fetched['data']->xpath("//character[@rank='0']"));
   $guildleader = $arr[0]['name'];
 
   db_query(
       "UPDATE {wowguild} SET members=%d, guildLeader='%s'",
-      $xml->guildInfo->guildHeader->attributes()->count,
+      $fetched['data']->guildInfo->guildHeader->attributes()->count,
       $guildleader
   );
 }
@@ -300,14 +299,38 @@ function _wowguild_block_content() {
 }
 
 /**
- * Returns the data from a given URL.
+ * Returns the data from a given URL, and checks for errors in the result.
  */
 function _wowguild_fetch_armory($url) {
   $headers = array(
       'User-Agent' => 'User-Agent: Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.0.11) Gecko/2009060309 Ubuntu/9.04 (jaunty) Firefox/3.0.11'
   );
 
-  return drupal_http_request($url, $headers);
+  $http_result = drupal_http_request($url, $headers);
+  $xml = simplexml_load_string($http_result->data);
+
+  if ($http_result->code != 200) {
+    drupal_set_message(t('Unable to retrieve information. Http error code: '. $http_result->code .'. '), error);
+    $error = TRUE;
+  }
+  else {
+    if ($xml->errorhtml == TRUE) {
+      switch ($xml->errorhtml->attributes()->type) {
+        case "maintenance":
+          drupal_set_message(t('Unable to retrieve information. The Armory is currently in maintenance.'), error);
+          $error = TRUE;
+          break;
+        default:
+          drupal_set_message(t('Unable to retrieve information. Recieved unkown error from the Armory.'), error);
+          $error = TRUE;
+      }
+    }
+  }
+  $output = array(
+      "error" => $error,
+      "data" => $xml,
+  );
+  return $output;
 }
 
 /**
@@ -338,7 +361,6 @@ function _wowguild_getmember($name) {
  */
 function _wowguild_recruitment() {
   $result = db_query(
-      //        'SELECT name, level FROM {wowguildmembers}'
       "SELECT * FROM {wowguildrecruitment}"
   );
 
@@ -675,4 +697,3 @@ function wowguild_view($node, $teaser=FALSE, $page=FALSE) {
 // ======================================
 // Theme:
 // ======================================
-
