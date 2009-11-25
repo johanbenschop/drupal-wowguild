@@ -84,19 +84,12 @@ function settings_form_validate($form, &$form_state) {
     )
   );
 
-  $http_result = _wowguild_fetch_armory($url);
+  $fetched = _wowguild_fetch_armory($url);
 
-  if ($http_result->code == 200) {
-    $xml = simplexml_load_string($http_result->data);
-    if ($xml === FALSE) {
-        form_set_error('', t("Getting the Armory data resulted in an error."));
-      }
-
-    if ($xml->guildInfo == '') {
+  if ($fetched['error'] == FALSE) {
+    if ($fetched['data']->guildInfo == '') {
       form_set_error('', t('Guild not found in the Armory.'));
     }
-
-    // Otherwise we don't have any data
   }
   else {
       form_set_error('', t("The Armory is not accessible."));
@@ -113,25 +106,23 @@ function settings_form_submit($form, &$form_state) {
     )
   );
 
-  $http_result = _wowguild_fetch_armory($url);
-  $xml = simplexml_load_string($http_result->data);
-
-  $arr = ($xml->xpath("//character[@rank='0']"));
+  $fetched = _wowguild_fetch_armory($url);
+  $arr = ($fetched['data']->xpath("//character[@rank='0']"));
   $guildleader = $arr[0]['name'];
 
   db_query(
     'INSERT INTO {wowguild} (name, realm, region, faction, members, battleGroup, guildLeader)'
      ."VALUES ('%s', '%s', '%s', %d, %d, '%s', '%s')",
-    check_plain($xml->guildInfo->guildHeader->attributes()->name),
-    check_plain($xml->guildInfo->guildHeader->attributes()->realm),
+    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->name),
+    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->realm),
     check_plain($form_state['values']['basic']['region']),
-    check_plain($xml->guildInfo->guildHeader->attributes()->faction),
-    check_plain($xml->guildInfo->guildHeader->attributes()->count),
-    check_plain($xml->guildInfo->guildHeader->attributes()->battleGroup),
+    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->faction),
+    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->count),
+    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->battleGroup),
     check_plain($guildleader)
   );
 
-  $characters = $xml->xpath("//character");
+  $characters = $fetched['data']->xpath("//character");
   foreach ($characters as $character) {
     db_query(
       'INSERT INTO {wowguildmembers} (name, level, rank, achPoints, genderId, raceId, classId)'
