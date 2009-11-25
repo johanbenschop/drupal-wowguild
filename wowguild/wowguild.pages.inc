@@ -468,19 +468,21 @@ function page_wowguild_import($character) {
       'name' => $character
       )
   );
+print_r($url);
+//$url = 'http://192.168.2.2/maintenance.xml';
+  $fetched = _wowguild_fetch_armory($url);
 
-  $http_result = _wowguild_fetch_armory($url);
-  $xml = simplexml_load_string($http_result->data);
-
-  db_query(
-      "UPDATE {wowguildprofessions} SET profession0id=%d, profession0value=%d, profession1id=%d, profession1value=%d WHERE name='%s'",
-      check_plain($xml->characterInfo->characterTab->professions->skill[0]->attributes()->id),
-      check_plain($xml->characterInfo->characterTab->professions->skill[0]->attributes()->value),
-      check_plain($xml->characterInfo->characterTab->professions->skill[1]->attributes()->id),
-      check_plain($xml->characterInfo->characterTab->professions->skill[1]->attributes()->value),
-      check_plain($character)
-  );
-
+  if ($fetched['error'] == FALSE) {
+    drupal_set_message(t('Sucsess!'));
+    db_query(
+        "UPDATE {wowguildprofessions} SET profession0id=%d, profession0value=%d, profession1id=%d, profession1value=%d WHERE name='%s'",
+        check_plain($fetched['data']->characterInfo->characterTab->professions->skill[0]->attributes()->id),
+        check_plain($fetched['data']->characterInfo->characterTab->professions->skill[0]->attributes()->value),
+        check_plain($fetched['data']->characterInfo->characterTab->professions->skill[1]->attributes()->id),
+        check_plain($fetched['data']->characterInfo->characterTab->professions->skill[1]->attributes()->value),
+        check_plain($character)
+    );
+  }
   return $output;
 }
 
