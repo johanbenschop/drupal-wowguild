@@ -16,25 +16,25 @@ $header = array(
     array('data' => 'Guild Rank', 'sort' => 'asc', 'field' => 'rank')
 );
 
-$result = db_query('SELECT * FROM {wowguildmembers}'. tablesort_sql($header));
+$rows = array();
+$sql = 'SELECT * FROM {wowguildmembers}';
+$count = 20;
+$query = pager_query($sql. tablesort_sql($header), $count);
 
-while ($row = db_fetch_object($result)) {
+while ($record = db_fetch_object($query)) {
   $full_path = drupal_get_path('module', 'wowguild');
-  $img_race = '<img src="'. $full_path .'/images/icons/'. $row->raceId .'-'. $row->genderId .'.gif" /> ';
-  $img_class = '<img src="'. $full_path .'/images/icons/'. $row->classId .'.gif" /> ';
+  $img_race = '<img src="'. $full_path .'/images/icons/'. $record->raceId .'-'. $record->genderId .'.gif" /> ';
+  $img_class = '<img src="'. $full_path .'/images/icons/'. $record->classId .'.gif" /> ';
 
   $rows[] = array(
-      array('data' => l($row->name, "character/$row->name")),
-      array('data' => $row->level),
-      array('data' => $img_race . $names_arr['race'][$row->raceId]),
-      array('data' => $img_class . $names_arr['class'][$row->classId]),
-      array('data' => $row->rank)
+      array('data' => l($record->name, "character/$record->name")),
+      array('data' => $record->level),
+      array('data' => $img_race . $names_arr['race'][$record->raceId]),
+      array('data' => $img_class . $names_arr['class'][$record->classId]),
+      array('data' => $record->rank)
   );
 }
 
-$display = theme_table($header, $rows);
-$page_limitnum = "20";
 $output .= theme('table', $header, $rows);
-$output .= theme('pager', NULL, $page_limitnum);
-print $output;
+print $output . theme('pager', $count);
 ?>
