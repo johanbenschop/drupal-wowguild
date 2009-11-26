@@ -8,7 +8,7 @@
  * $data: an array that contains the information of what classes are open.
  */
   $names_arr = wowguild_arr_names();
-  $data = _wowguild_recruitment();
+  $data = variable_get('wowguild_reqruiting', NULL)
 ?>
 <div id="wowguild_main">
 <?php foreach ($names_arr['class'] as $class) {
@@ -19,7 +19,7 @@
 <div id="wowguild_sidebar">
 <?php foreach ($names_arr['class'] as $class) {
   $class = str_replace(" ", "_", $class);
-  echo $names_arr['recruitment'][$data->$class];
+  echo $names_arr['recruitment'][$data[$class]];
   echo "<br/>";
 } ?>
 </div>
