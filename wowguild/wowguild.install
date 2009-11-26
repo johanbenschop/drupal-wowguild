@@ -6,85 +6,40 @@
  */
 
 /**
-  * Implementation of hook_install().
-  */
+ * Implementation of hook_install().
+ */
 function wowguild_install() {
-  drupal_install_schema('wowguild', 'wowguildmembers', 'wowguildrecruitment', 'wowguildapplies');
+  drupal_install_schema('wowguildmembers', 'wowguildprofessions', 'wowguildapplies');
 
-  db_query(
-    'INSERT INTO {wowguildrecruitment} (Warrior, Paladin, Hunter, Roque, Priest, Death_Knight, Shaman, Mage, Warlock, Druid)'
-     ."VALUES (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)"
+  $value = array(
+      'Warrior' => 0,
+      'Paladin' => 0,
+      'Hunter' => 0,
+      'Roque' => 0,
+      'Priest' => 0,
+      'Death_Knight' => 0,
+      'Shaman' => 0,
+      'Mage' => 0,
+      'Warlock' => 0,
+      'Druid' => 0
   );
+  variable_set('wowguild_reqruiting', $value);
 }
 
 /**
   * Implementation of hook_uninstall().
   */
 function wowguild_uninstall() {
-  drupal_uninstall_schema('wowguild', 'wowguildmembers', 'wowguildrecruitment', 'wowguildapplies');
+  drupal_uninstall_schema('wowguildmembers', 'wowguildprofessions', 'wowguildapplies');
+
+  variable_del('wowguid_settings');
+  variable_del('wowguild_reqruiting');
 }
 
 /**
   * Implementation of hook_schema().
   */
 function wowguild_schema() {
-  $schema['wowguild'] = array(
-    'description' => 'The table for storing the guilds information.',
-    'fields' => array(
-      'PrimKey' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'name' => array(
-        'type' => 'varchar',
-        'length' => 127,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'realm' => array(
-        'type' => 'varchar',
-        'length' => 127,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'region' => array(
-        'type' => 'varchar',
-        'length' => 3,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'faction' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'members' => array(
-        'type' => 'int',
-        'size' => 'small',
-        'length' => 4,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'battleGroup' => array(
-        'type' => 'varchar',
-        'length' => 25,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'guildLeader' => array(
-        'type' => 'varchar',
-        'length' => 25,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-    ),
-    'primary key' => array('PrimKey'),
-  );
-
   $schema['wowguildmembers'] = array(
     'description' => 'The table for storing the guilds information.',
     'fields' => array(
@@ -148,79 +103,6 @@ function wowguild_schema() {
       ),
     ),
     'primary key' => array('name'),
-  );
-
-  $schema['wowguildrecruitment'] = array(
-    'description' => 'The table for storing the recruitment information.',
-    'fields' => array(
-      'PrimKey' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Warrior' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Paladin' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Hunter' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Roque' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Priest' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Death_Knight' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Shaman' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Mage' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Warlock' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-      'Druid' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        'default' => 0,
-      ),
-    ),
-    'primary key' => array('PrimKey'),
   );
 
   $schema['wowguild_applicants'] = array(
@@ -317,7 +199,6 @@ function wowguild_schema() {
     ),
     'primary key' => array('name'),
   );
-
 
   return $schema;
 }

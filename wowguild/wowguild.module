@@ -256,7 +256,6 @@ function wowguild_theme() {
   'body' => NULL
   ),
   ),
-
   'wowguild_roster' => array(
   'template' => 'wowguild_roster',
   'arguments' => array(
@@ -271,7 +270,7 @@ function wowguild_theme() {
  * Returns the Recruitment block from the theme hook.
  */
 function _wowguild_block_recruitment() {
-  $data = _wowguild_get();
+  //$data = _wowguild_get();
   $names_arr = wowguild_arr_names();
   $output = theme('wowguild_recruitment',
       $names_arr
@@ -284,15 +283,15 @@ function _wowguild_block_recruitment() {
  * Returns the Guild Information block from the theme hook.
  */
 function _wowguild_block_content() {
-  $data = _wowguild_get();
+  $data = variable_get('wowguid_settings', NULL);
   $names_arr = wowguild_arr_names();
   $output = theme('wowguild_stats',
-      check_plain($data->name),
-      check_plain($data->members),
-      check_plain($data->realm),
-      check_plain($data->battleGroup),
-      check_plain($names_arr['faction'][$data->faction]),
-      check_plain($data->guildLeader)
+      check_plain($data['name']),
+      check_plain($data['members']),
+      check_plain($data['realm']),
+      check_plain($data['battleGroup']),
+      check_plain($names_arr['faction'][$data['faction']]),
+      check_plain($data['guildLeader'])
   );
 
   return $output;
@@ -334,34 +333,12 @@ function _wowguild_fetch_armory($url) {
 }
 
 /**
- * Returns an object containing the database query from wowguild.
- */
-function _wowguild_get() {
-  $result = db_query(
-      'SELECT name, realm, region, faction, members, battleGroup, guildLeader FROM {wowguild}'
-  );
-
-  return db_fetch_object($result);
-}
-
-/**
  * Returns an object containing the database query from wowguildmembers.
  */
 function _wowguild_getmember($name) {
   $result = db_query(
       //        'SELECT name, level FROM {wowguildmembers}'
       "SELECT * FROM {wowguildmembers} WHERE name='$name'"
-  );
-
-  return db_fetch_object($result);
-}
-
-/**
- * Returns an object containing the database query from wowguildrecruitment.
- */
-function _wowguild_recruitment() {
-  $result = db_query(
-      "SELECT * FROM {wowguildrecruitment}"
   );
 
   return db_fetch_object($result);
@@ -387,7 +364,7 @@ function _wowguild_ifcollapsed($default) {
  * the array contains: type, subtype, region, realm, name, item, team
  */
 function wowguild_url($vars) {
-  $guild_data = _wowguild_get();
+  $guild_data = variable_get('wowguid_settings', NULL);
 
   $region = _wowguild_ifset($vars['region'], $guild_data->region);
   $realm = _wowguild_ifset($vars['realm'], $guild_data->realm);

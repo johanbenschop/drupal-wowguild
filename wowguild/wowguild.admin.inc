@@ -22,8 +22,8 @@ function page_wowguild_settings() {
 
 function settings_form($form_state) {
   $names_arr = wowguild_arr_names();
-  $default = _wowguild_get();
-
+  $default = variable_get('wowguid_settings', NULL);
+  
   $form['basic'] = array(
     '#type' => 'fieldset',
     '#title' => t('Basic information'),
@@ -36,7 +36,7 @@ function settings_form($form_state) {
   $form['basic']['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Name'),
-    '#default_value' => $default->name,
+    '#default_value' => $default['name'],
     '#size' => 30,
     '#maxlength' => 64,
     '#description' => t('Enter your guilds name'),
@@ -47,7 +47,7 @@ function settings_form($form_state) {
   $form['basic']['realm'] = array(
     '#type' => 'textfield',
     '#title' => t('Realm'),
-    '#default_value' => $default->realm,
+    '#default_value' => $default['realm'],
     '#size' => 30,
     '#maxlength' => 64,
     '#description' => t('Enter the name of your realm'),
@@ -58,7 +58,7 @@ function settings_form($form_state) {
   $form['basic']['region'] = array(
     '#type' => 'select',
     '#title' => t('Region'),
-    '#default_value' => $default->region,
+    '#default_value' => $default['region'],
     '#options' => $names_arr['region'],
     '#description' => t('Select the region of your realm'),
     '#required' => TRUE,
@@ -110,18 +110,6 @@ function settings_form_submit($form, &$form_state) {
   $arr = ($fetched['data']->xpath("//character[@rank='0']"));
   $guildleader = $arr[0]['name'];
 
-  db_query(
-    'INSERT INTO {wowguild} (name, realm, region, faction, members, battleGroup, guildLeader)'
-     ."VALUES ('%s', '%s', '%s', %d, %d, '%s', '%s')",
-    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->name),
-    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->realm),
-    check_plain($form_state['values']['basic']['region']),
-    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->faction),
-    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->count),
-    check_plain($fetched['data']->guildInfo->guildHeader->attributes()->battleGroup),
-    check_plain($guildleader)
-  );
-
     $guild_settings = array(
       'name' => check_plain($fetched['data']->guildInfo->guildHeader->attributes()->name),
       'realm' => check_plain($fetched['data']->guildInfo->guildHeader->attributes()->realm),
@@ -168,7 +156,7 @@ function page_wowguild_recruitment() {
 
 function recruitment_form($form_state) {
   $names_arr = wowguild_arr_names();
-  $data = _wowguild_recruitment();
+  $data = variable_get('wowguild_reqruiting', NULL);
 
   $form['recruitment'] = array(
     '#type' => 'fieldset',
@@ -182,7 +170,7 @@ function recruitment_form($form_state) {
     $form['recruitment'][$class2] = array(
       '#type' => 'select',
       '#title' => t($class .'s'),
-      '#default_value' => $data->$class2,
+      '#default_value' => $data[$class2],
       '#options' => $names_arr['recruitment'],
       '#description' => t('Select whether the recruitment on '. $class .'s is open or not.'),
       '#required' => TRUE,
@@ -194,25 +182,11 @@ function recruitment_form($form_state) {
 }
 
 function recruitment_form_submit($form, &$form_state) {
-  db_query(
-    'UPDATE {wowguildrecruitment} SET Warrior=%d, Paladin=%d, Hunter=%d, Roque=%d, Priest=%d, Death_Knight=%d, Shaman=%d, Mage=%d, Warlock=%d, Druid=%d',
-    $form_state['values']['recruitment']['Warrior'],
-    $form_state['values']['recruitment']['Paladin'],
-    $form_state['values']['recruitment']['Hunter'],
-    $form_state['values']['recruitment']['Roque'],
-    $form_state['values']['recruitment']['Priest'],
-    $form_state['values']['recruitment']['Death_Knight'],
-    $form_state['values']['recruitment']['Shaman'],
-    $form_state['values']['recruitment']['Mage'],
-    $form_state['values']['recruitment']['Warlock'],
-    $form_state['values']['recruitment']['Druid']
-  );
-
   $value = array(
       'Warrior' => $form_state['values']['recruitment']['Warrior'],
       'Paladin' => $form_state['values']['recruitment']['Paladin'],
       'Hunter' => $form_state['values']['recruitment']['Hunter'],
-      'Rogue' => $form_state['values']['recruitment']['Roque'],
+      'Roque' => $form_state['values']['recruitment']['Roque'],
       'Priest' => $form_state['values']['recruitment']['Priest'],
       'Death_Knight' => $form_state['values']['recruitment']['Death_Knight'],
       'Shaman' => $form_state['values']['recruitment']['Shaman'],
@@ -220,9 +194,6 @@ function recruitment_form_submit($form, &$form_state) {
       'Warlock' => $form_state['values']['recruitment']['Warlock'],
       'Druid' => $form_state['values']['recruitment']['Druid']
   );
-
-  variable_set(wowguild_reqruiting, $value);
-  print_r( variable_get('wowguild_reqruiting') );
-
-  drupal_set_message( t('Confirmed and retrived information from the Armory.') );
+  variable_set('wowguild_reqruiting', $value);
+  drupal_set_message( t('Your settings are saved.') );
 }
