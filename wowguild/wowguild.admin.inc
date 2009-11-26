@@ -122,6 +122,18 @@ function settings_form_submit($form, &$form_state) {
     check_plain($guildleader)
   );
 
+    $guild_settings = array(
+      'name' => check_plain($fetched['data']->guildInfo->guildHeader->attributes()->name),
+      'realm' => check_plain($fetched['data']->guildInfo->guildHeader->attributes()->realm),
+      'region' => check_plain($form_state['values']['basic']['region']),
+      'faction' => check_plain($fetched['data']->guildInfo->guildHeader->attributes()->faction),
+      'members' => check_plain($fetched['data']->guildInfo->guildHeader->attributes()->count),
+      'battleGroup' => check_plain($fetched['data']->guildInfo->guildHeader->attributes()->battleGroup),
+      'guildLeader' => check_plain($guildleader)
+    );
+
+  variable_set('wowguid_settings', $guild_settings);
+    
   $characters = $fetched['data']->xpath("//character");
   foreach ($characters as $character) {
     db_query(
