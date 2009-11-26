@@ -207,5 +207,22 @@ function recruitment_form_submit($form, &$form_state) {
     $form_state['values']['recruitment']['Warlock'],
     $form_state['values']['recruitment']['Druid']
   );
+
+  $value = array(
+      'Warrior' => $form_state['values']['recruitment']['Warrior'],
+      'Paladin' => $form_state['values']['recruitment']['Paladin'],
+      'Hunter' => $form_state['values']['recruitment']['Hunter'],
+      'Rogue' => $form_state['values']['recruitment']['Roque'],
+      'Priest' => $form_state['values']['recruitment']['Priest'],
+      'Death_Knight' => $form_state['values']['recruitment']['Death_Knight'],
+      'Shaman' => $form_state['values']['recruitment']['Shaman'],
+      'Mage' => $form_state['values']['recruitment']['Mage'],
+      'Warlock' => $form_state['values']['recruitment']['Warlock'],
+      'Druid' => $form_state['values']['recruitment']['Druid']
+  );
+
+  variable_set(wowguild_reqruiting, $value);
+  print_r( variable_get('wowguild_reqruiting') );
+
   drupal_set_message( t('Confirmed and retrived information from the Armory.') );
 }
