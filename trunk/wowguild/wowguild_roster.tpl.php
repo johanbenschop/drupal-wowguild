@@ -27,7 +27,7 @@ while ($record = db_fetch_object($query)) {
   $img_class = '<img src="'. $full_path .'/images/icons/'. $record->classId .'.gif" /> ';
 
   $rows[] = array(
-      array('data' => l($record->name, "character/$record->name")),
+      array('data' => l($record->prefix. $record->name . $record->suffix, "character/$record->name")),
       array('data' => $record->level),
       array('data' => $img_race . $names_arr['race'][$record->raceId]),
       array('data' => $img_class . $names_arr['class'][$record->classId]),

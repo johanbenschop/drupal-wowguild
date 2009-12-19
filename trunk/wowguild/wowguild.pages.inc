@@ -460,29 +460,9 @@ function page_wowguild_crafting() {
  * It is possible that the inmports simply fails due to the Armory having errors.
  */
 function page_wowguild_import($character) {
-  $output = t('Fill in these simple questions and submit once you are done?');
+  $output = t('Fill in these simple questions and submit once you are done.');
 
-  $url = wowguild_url(
-      array(
-      'type' => 'character-sheet',
-      'name' => $character
-      )
-  );
-print_r($url);
-//$url = 'http://192.168.2.2/maintenance.xml';
-  $fetched = _wowguild_fetch_armory($url);
-
-  if ($fetched['error'] == FALSE) {
-    drupal_set_message(t('Sucsess!'));
-    db_query(
-        "UPDATE {wowguildprofessions} SET profession0id=%d, profession0value=%d, profession1id=%d, profession1value=%d WHERE name='%s'",
-        check_plain($fetched['data']->characterInfo->characterTab->professions->skill[0]->attributes()->id),
-        check_plain($fetched['data']->characterInfo->characterTab->professions->skill[0]->attributes()->value),
-        check_plain($fetched['data']->characterInfo->characterTab->professions->skill[1]->attributes()->id),
-        check_plain($fetched['data']->characterInfo->characterTab->professions->skill[1]->attributes()->value),
-        check_plain($character)
-    );
-  }
+  wowguild_character_import($character);
   return $output;
 }
 
