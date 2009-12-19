@@ -61,6 +61,10 @@ function wowguild_cron() {
       $fetched['data']->guildInfo->guildHeader->attributes()->count,
       $guildleader
   );
+  $characters = $fetched['data']->xpath("//character");
+  foreach ($characters as $character) {
+    wowguild_character_import($character->attributes()->name);
+  }
 }
 
 /**
@@ -333,6 +337,61 @@ function _wowguild_fetch_armory($url) {
 }
 
 /**
+ * Imports information such as professions from a character to the database.
+ * It is possible that the inmports simply fails due to the Armory having errors.
+ */
+function wowguild_character_import($character) {
+
+  $url = wowguild_url(
+      array(
+      'type' => 'character-sheet',
+      'name' => $character
+      )
+  );
+  $fetched = _wowguild_fetch_armory($url);
+
+  if ($fetched['error'] == FALSE) {
+    drupal_set_message(t('Sucsess!'));
+
+    db_query(
+        "UPDATE {wowguildmembers} SET prefix='%s', suffix='%s' WHERE name='%s'",
+        check_plain($fetched['data']->characterInfo->character->attributes()->prefix),
+        check_plain($fetched['data']->characterInfo->character->attributes()->suffix),
+        check_plain($character)
+    );
+
+    // This code is needed when a character doesn't have proffessions, wich results in a
+    // 'Call to a member function attributes() on a non-object ...' error.
+    if (is_object($fetched['data']->characterInfo->characterTab->professions->skill[0])) {
+      $prof0id = $fetched['data']->characterInfo->characterTab->professions->skill[0]->attributes()->id;
+      $prof0value = $fetched['data']->characterInfo->characterTab->professions->skill[0]->attributes()->value;
+    }
+    else {
+      $prof0id = NULL;
+      $prof0value = NULL;
+    }
+
+    if (is_object($fetched['data']->characterInfo->characterTab->professions->skill[1])) {
+      $prof1id = $fetched['data']->characterInfo->characterTab->professions->skill[1]->attributes()->id;
+      $prof1value = $fetched['data']->characterInfo->characterTab->professions->skill[1]->attributes()->value;
+    }
+    else {
+      $prof1id = NULL;
+      $prof1value = NULL;
+    }
+
+    db_query(
+        "UPDATE {wowguildprofessions} SET profession0id=%d, profession0value=%d, profession1id=%d, profession1value=%d WHERE name='%s'",
+        check_plain($prof0id),
+        check_plain($prof0value),
+        check_plain($prof1id),
+        check_plain($prof1value),
+        check_plain($character)
+    );
+  }
+}
+
+/**
  * Returns an object containing the database query from wowguildmembers.
  */
 function _wowguild_getmember($name) {
@@ -366,10 +425,10 @@ function _wowguild_ifcollapsed($default) {
 function wowguild_url($vars) {
   $guild_data = variable_get('wowguid_settings', NULL);
 
-  $region = _wowguild_ifset($vars['region'], $guild_data->region);
-  $realm = _wowguild_ifset($vars['realm'], $guild_data->realm);
-  $battlegroup = _wowguild_ifset($vars['battlegroup'], $guild_data->battlegroup);
-  $name = _wowguild_ifset($vars['name'], $guild_data->name);
+  $region = _wowguild_ifset($vars['region'], $guild_data['region']);
+  $realm = _wowguild_ifset($vars['realm'], $guild_data['realm']);
+  $battlegroup = _wowguild_ifset($vars['battlegroup'], $guild_data['battlegroup']);
+  $name = _wowguild_ifset($vars['name'], $guild_data['name']);
 
   switch ($vars['type']) {
     case "guild-stats":
