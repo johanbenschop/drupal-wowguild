@@ -1,0 +1,747 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Module for retriving information from the World of Warcraft armory.
+ * This module provides multible block's and pages for displaying the
+ * guild's information.
+ * Blocks: Guild Information and Recruitment.
+ * Pages: Guild Roster, Charachters Pages and Proffesions Page.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function wimd_help($path, $arg) {
+  switch ($path) {
+    case 'admin/wimd/settings':
+      $output = 'This module provides a way for an administrator to send'.
+          'email to a user. '.
+          'It assumes that the Drupal mailer is configured.';
+      return '<p>'. t($output) .'</p>';
+  }
+}
+
+/**
+ * Implements hook_perm().
+ */
+function wimd_perm() {
+  return array(
+    'accept applicants',
+    'delice applicants',
+    'modify reqruitment',
+  );
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function wimd_init() {
+  drupal_add_css(drupal_get_path('module', 'wimd') .'/wimd.css');
+  drupal_set_html_head('<script src="http://static.wowhead.com/widgets/power.js"></script>');
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function wimd_cron() {
+  $url = wimd_url(
+      array(
+      'type' => 'guild-stats',
+      )
+  );
+
+  $fetched = _wimd_fetch_armory($url);
+  $arr = ($fetched['data']->xpath("//character[@rank='0']"));
+  $guildleader = $arr[0]['name'];
+
+  db_query(
+      "UPDATE {wimd} SET members=%d, guildLeader='%s'",
+      $fetched['data']->guildInfo->guildHeader->attributes()->count,
+      $guildleader
+  );
+  
+  $characters = $fetched['data']->xpath("//character");
+  foreach ($characters as $character) {
+    wimd_character_import($character->attributes()->name);
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function wimd_user($op, &$edit, &$account, $category = NULL) {
+  if ($op == 'form' && $category == 'account') {
+    $form['character_settings'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('In-game character'),
+        '#collapsible' => TRUE,
+        '#weight' => 4
+    );
+    $form['character_settings']['main_character'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Name'),
+        '#default_value' => $edit['main_character'],
+        '#size' => 30,
+        '#maxlength' => 64,
+        '#description' => t('Enter your character&acute;s name.'),
+        '#required' => TRUE,
+    );
+    for($i = 0; $i < 9; $i++) {
+      $form['character_settings']['alt_character'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Name'),
+          '#default_value' => $edit['main_character'],
+          '#size' => 30,
+          '#maxlength' => 64,
+          '#description' => t('Enter your character&acute;s name.'),
+          '#required' => TRUE,
+      );
+    }
+    return $form;
+  }
+  // IT'S STILL BUGGED AND DOES NOT WORK!
+  if ($op == 'validate' && $category == 'account') {
+    $members = _wimd_getmember($edit->main_character);
+    //  print_r($account);
+    if ($edit->main_character != $members->name) {
+      form_set_error('', t("Oops! It seems that there is no character named '$account->main_character' in the guild."));
+    }
+  }
+  // STILL TO FINISH
+  if ($op == 'view') {
+    $account->content['EmailUsers'] = array(
+        '#type' => 'user_profile_category',
+        '#attributes' => array('class' => 'user-member'),
+        '#weight' => 0,
+        '#title' => t('Character information'),
+    );
+    // Create the content of the block
+    $account->content['EmailUsers']['EmailLink'] = array(
+        '#type' => 'user_profile_item',
+        //'#attributes' => array('class' => 'user-member'),
+        '#title' => t('Send a message to this user from the site administrator.'),
+        '#value' => l('Email', 'admin/emailusers/compose/'. $account->uid),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function wimd_block($op='list' , $delta=0, $edit=array()) {
+  switch ($op) {
+    case 'list':
+      $blocks[0]['info'] = t('Guild Statistics');
+      $blocks[1]['info'] = t('Recruitment');
+      return $blocks;
+    case 'view': default:
+    // The $delta parameter tells us which block is being requested.
+      switch ($delta) {
+        case 0:
+          $blocks['subject'] = t('Guild Statistics');
+          $blocks['content'] = _wimd_block_content();
+          break;
+        case 1:
+          $blocks['subject'] = t('Recruitment');
+          $blocks['content'] = _wimd_block_recruitment();
+          break;
+      }
+      return $blocks;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function wimd_menu() {
+  $items['admin/guildsettings'] = array(
+      'title' => 'Guild settings',
+      'description' => 'Adjust configuration options for your guild.',
+      'page callback' => 'page_wimd_setting',
+      'access arguments' => array('access content'),
+      'access arguments' => array('administer book outlines'),
+      'file' => 'wimd.admin.inc',
+  );
+
+  $items['admin/guildsettings/basic'] = array(
+      'title' => 'Basic settings',
+      'description' => 'Adjust basic guild configuration options.',
+      'page callback' => 'page_wimd_settings',
+      'access arguments' => array('access content'),
+      'file' => 'wimd.admin.inc',
+  );
+
+  $items['admin/guildsettings/recruitment'] = array(
+      'title' => 'Recruitment',
+      'description' => 'Control for which classes reqruitment is open for.',
+      'page callback' => 'page_wimd_recruitment',
+      'access arguments' => array('access content'),
+      'file' => 'wimd.admin.inc',
+  );
+
+  $items['character/%'] = array(
+      'title' => 'Character Profile',
+      'page callback' => 'page_character_sheet',
+      'page arguments' => array(1),
+      'access arguments' => array('access content'),
+      'file' => 'wimd.pages.inc',
+  );
+
+  $items['application'] = array(
+      'title' => 'Submit application',
+      'page callback' => 'page_wimd_application',
+      'page arguments' => array(1),
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
+      'file' => 'wimd.pages.inc',
+  );
+
+  $items['character'] = array(
+      'title' => 'Guild Roster',
+      'page callback' => 'page_wimd_character',
+      'page arguments' => array(1),
+      'access arguments' => array('access content'),
+      'file' => 'wimd.pages.inc',
+  );
+
+  $items['crafting'] = array(
+      'title' => 'Crafting',
+      'page callback' => 'page_wimd_crafting',
+      'page arguments' => array(1),
+      'access arguments' => array('access content'),
+      //'type' => MENU_LOCAL_TASK,
+      'file' => 'wimd.pages.inc',
+  );
+
+  $items['import/%'] = array(
+      'title' => 'Character Import',
+      'page callback' => 'page_wimd_import',
+      'page arguments' => array(1),
+      'access arguments' => array('access content'),
+      'file' => 'wimd.pages.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function wimd_theme() {
+  return array(
+  'wimd_sheet' => array(
+  'template' => 'wimd_sheet',
+  'arguments' => array(
+  'name' => NULL,
+  'level' => NULL,
+  'genderId' => NULL,
+  'classId' => NULL,
+  'raceId' => NULL,
+  'gender' => NULL,
+  'class' => NULL,
+  'race' => NULL,
+  'achPoints' => NULL,
+  'prefix' => NULL,
+  'suffix' => NULL
+  ),
+  ),
+  'wimd_stats' => array(
+  'template' => 'wimd_stats',
+  'arguments' => array(
+  'name' => NULL,
+  'members' => NULL,
+  'realm' => NULL,
+  'battlegroup' => NULL,
+  'faction' => NULL,
+  'guildleader' => NULL
+  ),
+  ),
+  'wimd_recruitment' => array(
+  'template' => 'wimd_recruitment',
+  'arguments' => array(
+  'array' => NULL
+  ),
+  ),
+  'wimd_achievement' => array(
+  'template' => 'wimd_achievement',
+  'arguments' => array(
+  'points' => NULL,
+  'date' => NULL,
+  'title' => NULL,
+  'body' => NULL
+  ),
+  ),
+  'wimd_roster' => array(
+  'template' => 'wimd_roster',
+  'arguments' => array(
+  'test' => NULL
+  ),
+  ),
+
+  );
+}
+
+/**
+ * Returns the Recruitment block from the theme hook.
+ */
+function _wimd_block_recruitment() {
+  //$data = _wimd_get();
+  $names_arr = wimd_arr_names();
+  $output = theme('wimd_recruitment',
+      $names_arr
+  );
+
+  return $output;
+}
+
+/**
+ * Returns the Guild Information block from the theme hook.
+ */
+function _wimd_block_content() {
+  $data = variable_get('wowguid_settings', NULL);
+  $names_arr = wimd_arr_names();
+  $output = theme('wimd_stats',
+      check_plain($data['name']),
+      check_plain($data['members']),
+      check_plain($data['realm']),
+      check_plain($data['battleGroup']),
+      check_plain($names_arr['faction'][$data['faction']]),
+      check_plain($data['guildLeader'])
+  );
+
+  return $output;
+}
+
+/**
+ * Returns the data from a given URL, and checks for errors in the result.
+ */
+function _wimd_fetch_armory($url) {
+  $headers = array(
+      'User-Agent' => 'User-Agent: Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.0.11) Gecko/2009060309 Ubuntu/9.04 (jaunty) Firefox/3.0.11'
+  );
+
+  $http_result = drupal_http_request($url, $headers);
+  $xml = simplexml_load_string($http_result->data);
+
+  if ($http_result->code != 200) {
+    drupal_set_message(t('Unable to retrieve information. Http error code: '. $http_result->code .'. '), error);
+    $error = TRUE;
+  }
+  else {
+    if ($xml->errorhtml == TRUE) {
+      switch ($xml->errorhtml->attributes()->type) {
+        case "maintenance":
+          drupal_set_message(t('Unable to retrieve information. The Armory is currently in maintenance.'), error);
+          $error = TRUE;
+          break;
+        default:
+          drupal_set_message(t('Unable to retrieve information. Recieved unkown error from the Armory.'), error);
+          $error = TRUE;
+      }
+    }
+  }
+  $output = array(
+      "error" => $error,
+      "data" => $xml,
+  );
+  return $output;
+}
+
+/**
+ * Imports information such as professions from a character to the database.
+ * It is possible that the inmports simply fails due to the Armory having errors.
+ */
+function wimd_character_import($character) {
+
+  $url = wimd_url(
+      array(
+      'type' => 'character-sheet',
+      'name' => $character
+      )
+  );
+  $fetched = _wimd_fetch_armory($url);
+
+  if ($fetched['error'] == FALSE) {
+    drupal_set_message(t('Sucsess!'));
+
+    db_query(
+        "UPDATE {wimdmembers} SET prefix='%s', suffix='%s' WHERE name='%s'",
+        check_plain($fetched['data']->characterInfo->character->attributes()->prefix),
+        check_plain($fetched['data']->characterInfo->character->attributes()->suffix),
+        check_plain($character)
+    );
+
+    // This code is needed when a character doesn't have proffessions, wich results in a
+    // 'Call to a member function attributes() on a non-object ...' error.
+    if (is_object($fetched['data']->characterInfo->characterTab->professions->skill[0])) {
+      $prof0id = $fetched['data']->characterInfo->characterTab->professions->skill[0]->attributes()->id;
+      $prof0value = $fetched['data']->characterInfo->characterTab->professions->skill[0]->attributes()->value;
+    }
+    else {
+      $prof0id = NULL;
+      $prof0value = NULL;
+    }
+
+    if (is_object($fetched['data']->characterInfo->characterTab->professions->skill[1])) {
+      $prof1id = $fetched['data']->characterInfo->characterTab->professions->skill[1]->attributes()->id;
+      $prof1value = $fetched['data']->characterInfo->characterTab->professions->skill[1]->attributes()->value;
+    }
+    else {
+      $prof1id = NULL;
+      $prof1value = NULL;
+    }
+
+    db_query(
+        "UPDATE {wimdprofessions} SET profession0id=%d, profession0value=%d, profession1id=%d, profession1value=%d WHERE name='%s'",
+        check_plain($prof0id),
+        check_plain($prof0value),
+        check_plain($prof1id),
+        check_plain($prof1value),
+        check_plain($character)
+    );
+  }
+}
+
+/**
+ * Returns an object containing the database query from wimdmembers.
+ */
+function _wimd_getmember($name) {
+  $result = db_query(
+      //        'SELECT name, level FROM {wimdmembers}'
+      "SELECT * FROM {wimdmembers} WHERE name='$name'"
+  );
+
+  return db_fetch_object($result);
+}
+
+/**
+ * Checks whether $default contains data
+ * and returns FALSE if not and TRUE if it found data.
+ * @default an variable containing data
+ */
+function _wimd_ifcollapsed($default) {
+  if ($default == '') {
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
+
+/**
+ * Builds a link to an Armory page.
+ * @vars an array that passas info to make up the link.
+ * the array contains: type, subtype, region, realm, name, item, team
+ */
+function wimd_url($vars) {
+  $guild_data = variable_get('wowguid_settings', NULL);
+
+  $region = _wimd_ifset($vars['region'], $guild_data['region']);
+  $realm = _wimd_ifset($vars['realm'], $guild_data['realm']);
+  $battlegroup = _wimd_ifset($vars['battlegroup'], $guild_data['battlegroup']);
+  $name = _wimd_ifset($vars['name'], $guild_data['name']);
+
+  switch ($vars['type']) {
+    case "guild-stats":
+    case "character-sheet":
+    case "character-talents":
+    case "character-reputation":
+    case "character-achievements":
+    case "character-statistics":
+      $output = sprintf("http://%s.wowarmory.com/%s.xml?r=%s&n=%s",
+          $region,
+          $vars['type'],
+          str_replace(" ", "+", $realm),
+          str_replace(" ", "+", $name)
+      );
+      if ($vars['subtype'] == TRUE) {
+        $output .= sprintf("&c=%d",
+            $vars['subtype']
+        );
+      }
+      break;
+
+    case "character-calendar":
+      $output = sprintf("http://%s.wowarmory.com/vault/%s.xml?r=%s&n=%s",
+          $region,
+          $vars['type'],
+          str_replace(" ", "+", $realm),
+          str_replace(" ", "+", $name)
+      );
+      break;
+
+    case "item-info":
+      $output = sprintf("http://%s.wowarmory.com/%s.xml?i=%d",
+          $region,
+          $vars['type'],
+          $vars['item']
+      );
+      break;
+
+    case "team-info":
+      $output = sprintf("http://%s.wowarmory.com/%s.xml?b=%s&r=%s&ts=%s",
+          $region,
+          $vars['type'],
+          $battlegroup,
+          str_replace(" ", "+", $realm),
+          str_replace(" ", "+", $vars['team'])
+      );
+      break;
+  }
+
+  return $output;
+}
+
+/**
+ * Simple function to determine if $a exists, when it does it returns $a.
+ * If $a does not exists it returns $b.
+ */
+function _wimd_ifset($a, $b) {
+  if ($a == TRUE) {
+    return $a;
+  }
+  else {
+    return $b;
+  }
+}
+
+/**
+ * Returns an nested array of names that correpond to their Id's.
+ */
+function wimd_arr_names() {
+  $output = array(
+      "region" => array(
+      'www' => t('Americas'),
+      'eu' => t('Europa'),
+      'kr' => t('Korea'),
+      'cn' => t('China'),
+      'tw' => t('Taiwan')
+      ),
+      "recruitment" => array("0" => "Closed", "1" => "Open"),
+      "faction" => array("0" => "Alliance", "1" => "Horde"),
+      "gender" => array("0" => "Male", "1" => "Female"),
+      "race" => array(
+      "1" => "Human",
+      "2" => "Orc",
+      "3" => "Dwarf",
+      "4" => "Night Elf",
+      "5" => "Undead",
+      "6" => "Tauren",
+      "7" => "Gnome",
+      "8" => "Troll",
+      //      "9" => "",
+      "10" => "Blood Elf",
+      "11" => "Draenei"
+      ),
+      "class" => array(
+      "1" => "Warrior",
+      "2" => "Paladin",
+      "3" => "Hunter",
+      "4" => "Roque",
+      "5" => "Priest",
+      "6" => "Death Knight",
+      "7" => "Shaman",
+      "8" => "Mage",
+      "9" => "Warlock",
+      //      "10" => "",
+      "11" => "Druid"
+      )
+  );
+
+  return $output;
+}
+
+
+
+
+
+
+
+/**
+ * Provides the wimd content type.
+ * @file
+ */
+
+/**
+ * Implements hook_node_info()
+ */
+function wimd_node_info() {
+  return array(
+  'wimd' => array(
+  'module' => 'wimd',
+  'name' => t('wimd'),
+  'description' => t("A wimd of a person."),
+  'has_title' => TRUE,
+  'title_label' => t('wimd of'),
+  'has_body' => TRUE,
+  'body_label' => t('Overview'),
+  //'module' => 'wimd',
+  )
+  );
+}
+
+
+
+/**
+ * Implements hook_access()
+ */
+function wimd_access($op, $node, $account) {
+  switch ($op) {
+    case 'create':
+      return user_access('create wimd node', $account);
+    case 'update':
+      return user_access('edit wimd nodes', $account);
+    case 'delete':
+      return user_access('delete wimd nodes', $account);
+  }
+}
+
+// ======================================
+// Database:
+// ======================================
+
+/**
+ * implements hook_insert()
+ */
+function wimd_insert($node) {
+
+  if (!isset($node->life)) $node->life = '';
+  if (!isset($node->works)) $node->life = '';
+
+  db_query(
+      'INSERT INTO {wimd} (vid, nid, dates, life, works) '
+      ."VALUES (%d, %d, '%s', '%s','%s')",
+      $node->vid,
+      $node->nid,
+      $node->dates,
+      $node->life,
+      $node->works
+  );
+}
+/**
+ * implements hook_update()
+ */
+function wimd_update($node) {
+  if ($node->revision) { // Node is new or a revision. See node_example.module.
+    wimd_insert($node);
+  }
+  else {
+    db_query("UPDATE {wimd} SET dates = '%s', life = '%s', works='%s' "
+        ."WHERE vid = %d",
+        $node->dates,
+        $node->life,
+        $node->works,
+        $node->vid
+    );
+  }
+}
+/**
+ * implements hook_delete()
+ */
+function wimd_delete($node) {
+  db_query('DELETE * FROM {wimd} WHERE nid = %d', $node->nid);
+}
+
+/**
+ * Implements hook_nodeapi()
+ * This handles deleting revisions.
+ */
+function wimd_nodeapi(&$node, $op, $teaser, $page) {
+  if ($op == 'delete revision')
+    db_query('DELETE * FROM {wimd} WHERE vid = %d', $node->vid);
+}
+
+// ======================================
+// Creating Data:
+// ======================================
+/**
+ * Implementation of hook_form()
+ */
+function wimd_form(&$node) {
+  $type = node_get_types('type', $node);
+
+  // Existing files: title (wimd of) and body (Overview)
+  if ($type->has_title) {
+    $form['title'] = array(
+        '#type' => 'textfield',
+        '#title' => check_plain($type->title_label),
+        '#required' => TRUE,
+        '#default_value' => $node->title,
+        '#weight' => -5
+    );
+  }
+
+  if ($type->has_body) {
+    $form['body_field'] = node_body_field(
+        $node,
+        $type->body_label,
+        $type->min_word_count
+    );
+  }
+
+  // Our custom fields: Dates, Life, Works.
+  // (See FAPI docs for specification)
+  $form['dates'] = array(
+      '#type' => 'textfield',
+      '#size' => 50,
+      '#maxlengh' => 127,
+      '#title' => t('Dates'),
+      '#description' => t("Birth and death dates."),
+      '#default_value' => isset($node->dates) ? $node->dates : '',
+  );
+  $form['life'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Life'),
+      '#cols' => 50,
+      '#rows' => 5,
+      '#description' => t("A description of this person's life."),
+      '#default_value' => isset($node->life) ? $node->life : '',
+  );
+  $form['works'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Works'),
+      '#cols' => 50,
+      '#rows' => 5,
+      '#description' => t("An annotated bibliography of this person's works."),
+      '#default_value' => isset($node->works) ? $node->works : '',
+  );
+
+  return $form;
+}
+
+// ======================================
+// Getting Data:
+// ======================================
+/**
+ * Implementation of hook_load()
+ */
+function wimd_load($node) {
+  $result = db_query(
+      'SELECT dates, life, works FROM {wimd} WHERE vid = %d',
+      $node->vid
+  );
+  return db_fetch_object($result);
+}
+/**
+ * Implementation of hook_view()
+ */
+function wimd_view($node, $teaser=FALSE, $page=FALSE) {
+  $node = node_prepare($node, $teaser); // get it ready for display
+
+  $dates = check_plain($node->dates);
+  $life = check_markup($node->life);
+  $works = check_markup($node->works);
+
+  // Add theme stuff here
+  $node->content['wimd_info'] = array(
+      '#value' => theme('wimd_info', $dates, $life, $works),
+      '#weight' => 1,
+  );
+
+  return $node;
+}
+
+// ======================================
+// Theme:
+// ======================================

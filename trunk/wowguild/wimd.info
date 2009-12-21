@@ -1,0 +1,5 @@
+; $Id$
+name = "Warcraft Integration Module for Drupal"
+description = "Warcraft Integration Module for Drupal"
+core = 6.x
+php = 5.1
