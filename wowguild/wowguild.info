@@ -1,5 +1,0 @@
-; $Id$
-name = "WoWDGM: Guild Settings"
-description = "Displays ans set settings of your guild."
-core = 6.x
-php = 5.1
