@@ -22,7 +22,7 @@ function page_wimd_settings() {
 
 function settings_form($form_state) {
   $names_arr = wimd_arr_names();
-  $default = variable_get('wowguid_settings', NULL);
+  $default = variable_get('wimd_settings', NULL);
   
   $form['basic'] = array(
     '#type' => 'fieldset',
@@ -163,7 +163,7 @@ function settings_form_submit($form, &$form_state) {
       'guildLeader' => check_plain($guildleader)
     );
 
-  variable_set('wowguid_settings', $guild_settings);
+  variable_set('wimd_settings', $guild_settings);
     
   $characters = $fetched['data']->xpath("//character");
   foreach ($characters as $character) {

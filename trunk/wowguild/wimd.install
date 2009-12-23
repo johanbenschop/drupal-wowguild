@@ -9,7 +9,7 @@
  * Implementation of hook_install().
  */
 function wimd_install() {
-  drupal_install_schema('wimdmembers', 'wimdprofessions', 'wimdapplies');
+  drupal_install_schema('wimd');
 
   $value = array(
       'Warrior' => 0,
@@ -27,177 +27,177 @@ function wimd_install() {
 }
 
 /**
-  * Implementation of hook_uninstall().
-  */
+ * Implementation of hook_uninstall().
+ */
 function wimd_uninstall() {
-  drupal_uninstall_schema('wimdmembers', 'wimdprofessions', 'wimdapplies');
+  drupal_uninstall_schema('wimd');
 
-  variable_del('wowguid_settings');
+  variable_del('wimd_settings');
   variable_del('wimd_reqruiting');
 }
 
 /**
-  * Implementation of hook_schema().
-  */
+ * Implementation of hook_schema().
+ */
 function wimd_schema() {
   $schema['wimdmembers'] = array(
-    'description' => 'The table for storing the guilds information.',
-    'fields' => array(
+      'description' => 'The table for storing the guilds information.',
+      'fields' => array(
       'name' => array(
-        'type' => 'varchar',
-        'length' => 12,
-        'not null' => TRUE,
-        'default' => '',
+      'type' => 'varchar',
+      'length' => 12,
+      'not null' => TRUE,
+      'default' => '',
       ),
       'level' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 2,
-        //'not null' => TRUE,
-        'default' => 0,
+      'type' => 'int',
+      'size' => 'tiny',
+      'length' => 2,
+      //'not null' => TRUE,
+      'default' => 0,
       ),
       'rank' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        //'not null' => TRUE,
-        'default' => 0,
+      'type' => 'int',
+      'size' => 'tiny',
+      'length' => 1,
+      //'not null' => TRUE,
+      'default' => 0,
       ),
       'achPoints' => array(
-        'type' => 'int',
-        //'not null' => TRUE,
-        'default' => 0,
+      'type' => 'int',
+      //'not null' => TRUE,
+      'default' => 0,
       ),
       'genderId' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        //'not null' => TRUE,
-        'default' => 0,
+      'type' => 'int',
+      'size' => 'tiny',
+      'length' => 1,
+      //'not null' => TRUE,
+      'default' => 0,
       ),
       'raceId' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        //'not null' => TRUE,
-        'default' => 0,
+      'type' => 'int',
+      'size' => 'tiny',
+      'length' => 1,
+      //'not null' => TRUE,
+      'default' => 0,
       ),
       'classId' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'length' => 1,
-        //'not null' => TRUE,
-        'default' => 00,
+      'type' => 'int',
+      'size' => 'tiny',
+      'length' => 1,
+      //'not null' => TRUE,
+      'default' => 00,
       ),
       'prefix' => array(
-        'type' => 'varchar',
-        'length' => 127,
-        //'not null' => TRUE,
-        'default' => '',
+      'type' => 'varchar',
+      'length' => 127,
+      //'not null' => TRUE,
+      'default' => '',
       ),
       'suffix' => array(
-        'type' => 'varchar',
-        'length' => 127,
-        //'not null' => TRUE,
-        'default' => '',
+      'type' => 'varchar',
+      'length' => 127,
+      //'not null' => TRUE,
+      'default' => '',
       ),
-    ),
-    'primary key' => array('name'),
+      ),
+      'primary key' => array('name'),
   );
 
   $schema['wimd_applicants'] = array(
-    'description' => 'The table for storing the guilds information.',
-    'fields' => array(
+      'description' => 'The table for storing the guilds information.',
+      'fields' => array(
       'nid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0
       ),
       'name' => array(
-        'type' => 'varchar',
-        'size' => 'normal',
-        'length' => 12,
-        'default' => 'test',
+      'type' => 'varchar',
+      'size' => 'normal',
+      'length' => 12,
+      'default' => 'test',
       ),
       'realname' => array(
-        'type' => 'varchar',
-        'size' => 'normal',
-        'length' => 255,
-        'default' => 'test',
+      'type' => 'varchar',
+      'size' => 'normal',
+      'length' => 255,
+      'default' => 'test',
       ),
 /*      'birthday' => array(
         'type' => 'date'
         'default' => 0,
       ),*/
       'email' => array(
-        'type' => 'varchar',
-        'size' => 'normal',
-        'length' => 127,
-        'default' => 'test',
+      'type' => 'varchar',
+      'size' => 'normal',
+      'length' => 127,
+      'default' => 'test',
       ),
       'country' => array(
-        'type' => 'varchar',
-        'size' => 'normal',
-        'length' => 127,
-        'default' => 'test',
+      'type' => 'varchar',
+      'size' => 'normal',
+      'length' => 127,
+      'default' => 'test',
       ),
       'aboutyou' => array(
-        'type' => 'text',
-        'size' => 'normal',
-        'not null' => FALSE,
+      'type' => 'text',
+      'size' => 'normal',
+      'not null' => FALSE,
       ),
       'whyapply' => array(
-        'type' => 'text',
-        'size' => 'normal',
-        'not null' => FALSE,
+      'type' => 'text',
+      'size' => 'normal',
+      'not null' => FALSE,
       ),
-    ),
-    'indexes' => array(
+      ),
+      'indexes' => array(
       'nid' => array('nid'),
-    ),
-    'primary key' => array('nid'),
+      ),
+      'primary key' => array('nid'),
   );
 
-    $schema['wimdprofessions'] = array(
-    'description' => 'The table for storing the guilds professions.',
-    'fields' => array(
+  $schema['wimdprofessions'] = array(
+      'description' => 'The table for storing the guilds professions.',
+      'fields' => array(
       'name' => array(
-        'type' => 'varchar',
-        'length' => 12,
-        'not null' => TRUE,
-        'default' => '',
+      'type' => 'varchar',
+      'length' => 12,
+      'not null' => TRUE,
+      'default' => '',
       ),
       'profession0id' => array(
-        'type' => 'int',
-        'size' => 'small',
-        'length' => 3,
-        'not null' => TRUE,
-        'default' => 00,
+      'type' => 'int',
+      'size' => 'small',
+      'length' => 3,
+      'not null' => TRUE,
+      'default' => 00,
       ),
       'profession0value' => array(
-        'type' => 'int',
-        'size' => 'small',
-        'length' => 3,
-        'not null' => TRUE,
-        'default' => 00,
+      'type' => 'int',
+      'size' => 'small',
+      'length' => 3,
+      'not null' => TRUE,
+      'default' => 00,
       ),
       'profession1id' => array(
-        'type' => 'int',
-        'size' => 'small',
-        'length' => 3,
-        'not null' => TRUE,
-        'default' => 00,
+      'type' => 'int',
+      'size' => 'small',
+      'length' => 3,
+      'not null' => TRUE,
+      'default' => 00,
       ),
       'profession1value' => array(
-        'type' => 'int',
-        'size' => 'small',
-        'length' => 3,
-        'not null' => TRUE,
-        'default' => 00,
+      'type' => 'int',
+      'size' => 'small',
+      'length' => 3,
+      'not null' => TRUE,
+      'default' => 00,
       ),
-    ),
-    'primary key' => array('name'),
+      ),
+      'primary key' => array('name'),
   );
 
   return $schema;

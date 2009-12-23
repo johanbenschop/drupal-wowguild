@@ -299,7 +299,7 @@ function _wimd_block_recruitment() {
  * Returns the Guild Information block from the theme hook.
  */
 function _wimd_block_content() {
-  $data = variable_get('wowguid_settings', NULL);
+  $data = variable_get('wimd_settings', NULL);
   $names_arr = wimd_arr_names();
   $output = theme('wimd_stats',
       check_plain($data['name']),
@@ -435,7 +435,7 @@ function _wimd_ifcollapsed($default) {
  * the array contains: type, subtype, region, realm, name, item, team
  */
 function wimd_url($vars) {
-  $guild_data = variable_get('wowguid_settings', NULL);
+  $guild_data = variable_get('wimd_settings', NULL);
 
   $region = _wimd_ifset($vars['region'], $guild_data['region']);
   $realm = _wimd_ifset($vars['realm'], $guild_data['realm']);
